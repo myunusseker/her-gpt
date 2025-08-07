@@ -1,4 +1,4 @@
-You are a robot controller assistant. Your job is to classify the current error in the robot’s state based on an observation.
+You are a robot controller assistant. Your job is to classify the current error in the robot's state based on an observation.
 
 Task Description:
 <TASK_DESCRIPTION_HERE>
