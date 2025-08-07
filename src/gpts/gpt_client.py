@@ -10,17 +10,26 @@ from src.responses.action_response import ActionResponse
 class GPTClient:
     """Wrapper around the OpenAI client for vision-based prompts."""
 
-    def __init__(self, model_name, system_prompt = None, gpt_type="openai"):
+    def __init__(self, model_name, system_prompt = None, gpt_type="openai", gemini_use_history=False):
         load_dotenv()
-        if gpt_type == "gemini":
-            self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-        else:
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        
+
         self.model_name = model_name
         self.system_prompt = system_prompt
         self.gpt_type = gpt_type
-
+        self.gemini_use_history = gemini_use_history
+        
+        if gpt_type == "gemini":
+            self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+            if gemini_use_history:
+                self.client_chat = self.client.chats.create(
+                    model=model_name,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_prompt
+                    ),
+                )
+        else:
+            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    
     def upload_image(self, path):
         # For Gemini, we can directly use the image path
         if self.gpt_type == "gemini":
@@ -34,13 +43,16 @@ class GPTClient:
     def chat(self, messages, previous_response_id = None, text_format = None, full_response = False):
         # For Gemini, we use the generate_content method
         if self.gpt_type == "gemini":
-            response = self.client.models.generate_content(
-                model=self.model_name, 
-                config=types.GenerateContentConfig(
-                    system_instruction=self.system_prompt
-                ),
-                contents=messages
-            )
+            if self.gemini_use_history:
+                response = self.client_chat.send_message(messages)
+            else:
+                response = self.client.models.generate_content(
+                    model=self.model_name, 
+                    config=types.GenerateContentConfig(
+                        system_instruction=self.system_prompt
+                    ),
+                    contents=messages
+                )
             return response.text
         
         # For OpenAI, we use the chat method

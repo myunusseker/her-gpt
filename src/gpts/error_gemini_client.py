@@ -1,19 +1,14 @@
-import base64
-from google import genai
-from google.genai import types
-from PIL import Image
-
 from src.gpts.gpt_client import GPTClient
 
 
 class ErrorGeminiClient(GPTClient):
     """Error GPT client that classifies environmental observations into error categories using Gemini API."""
 
-    def __init__(self, model_name="gemini-2.5-flash", task_description=None):
+    def __init__(self, model_name="gemini-2.5-flash", task_description=None, use_history=False):
         with open("prompts/error_gpt_system.txt", "r") as file:
             system_prompt = file.read().replace("<TASK_DESCRIPTION_HERE>", task_description)
         print(f"Using system prompt: {system_prompt}")
-        super().__init__(model_name, system_prompt, gpt_type="gemini")
+        super().__init__(model_name, system_prompt, gpt_type="gemini", gemini_use_history=use_history)
 
     def generate_error_prompt(self, observation_id, goal_id, error_categories):
         categories_str = '\n'.join(f"- {cat}" for cat in error_categories)
@@ -34,7 +29,11 @@ class ErrorGeminiClient(GPTClient):
         return error_category
 
 if __name__ == "__main__":
-    error_gpt = ErrorGeminiClient(model_name="gemini-2.5-flash", task_description="The task is to place a cube on the circular target position.")
+    error_gpt = ErrorGeminiClient(
+        model_name="gemini-2.5-flash", 
+        task_description="The task is to place a cube on the circular target position.",
+        use_history=True
+    )
     observation_id = error_gpt.upload_image("data/test/cube_data/side_views/side_view_330.png")
     goal_id = error_gpt.upload_image("data/test/cube_data/cube_goal.png")
 
@@ -42,9 +41,9 @@ if __name__ == "__main__":
         "cube is too far",
         "cube is to the left of the target",
         "cube is to the right of the target",
-        "cube is at upper side of the target",
-        "cube is at below side of the target",
+        "cube is at the upper side of the target",
+        "cube is at the below side of the target",
     ]
-
-    error_category = error_gpt.classify_error(observation_id, goal_id, error_categories)
-    print(f"Error Category: {error_category}")
+    for i in range(10):
+        error_category = error_gpt.classify_error(observation_id, goal_id, error_categories)
+        print(f"\n#################\nError Category: {error_category}")

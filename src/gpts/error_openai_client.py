@@ -41,8 +41,8 @@ if __name__ == "__main__":
         "cube is too far",
         "cube is to the left of the target",
         "cube is to the right of the target",
-        "cube is at upper side of the target",
-        "cube is at below side of the target",
+        "cube is at the upper side of the target",
+        "cube is at the below side of the target",
     ]
     
     for i in range(10):
