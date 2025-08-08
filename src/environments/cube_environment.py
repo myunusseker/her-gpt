@@ -5,10 +5,10 @@ import pybullet_data
 from PIL import Image
 
 
-class SlideToGoalEnv:
+class CubeEnvironment:
     """Simple environment where a cube is pushed towards a goal."""
 
-    def __init__(self, gui: bool = True, speed: int = 30):
+    def __init__(self, gui: bool = True, speed: int = 60):
         self.speed = speed
         self.gui = gui
         if self.gui:
@@ -58,7 +58,7 @@ class SlideToGoalEnv:
         pos, _ = p.getBasePositionAndOrientation(self.block_id)
         return np.array(pos)
 
-    def apply_push(self, force_vector):
+    def apply_action(self, force_vector):
         p.applyExternalForce(
             objectUniqueId=self.block_id,
             linkIndex=-1,
@@ -82,8 +82,21 @@ class SlideToGoalEnv:
                 time.sleep(1 / self.speed)
 
         return self.get_state()
+    
+    def safe_image_from_pybullet(self, raw_img, width, height):
+        """Converts raw PyBullet RGB image to a valid Image object."""
+        if not isinstance(raw_img, np.ndarray):
+            raw_img = np.array(raw_img, dtype=np.uint8)
 
-    def render_views(self, topdown_path="topdown.png", side_path="side.png", use_static_side=False):
+        img = raw_img.reshape((height, width, 4))  # PyBullet always returns RGBA
+
+        try:
+            return Image.fromarray(img)  # Let PIL auto-detect RGBA
+        except ValueError:
+            # Fallback: explicitly set mode
+            return Image.fromarray(img, mode="RGBA")
+
+    def render_views(self, topdown_path="topdown.png", side_path="side.png", use_static_side=True):
         # Get block position for tracker view
         block_pos, _ = p.getBasePositionAndOrientation(self.block_id)
 
@@ -137,15 +150,23 @@ class SlideToGoalEnv:
             projectionMatrix=proj_matrix,
         )
 
-        Image.fromarray(rgb_top).save(topdown_path)
-        Image.fromarray(rgb_side).save(side_path)
+        img_top = self.safe_image_from_pybullet(rgb_top, width=512, height=512)
+        img_side = self.safe_image_from_pybullet(rgb_side, width=512, height=512)
+
+        img_top.save(topdown_path)
+        img_side.save(side_path)
+
 
     def close(self) -> None:
         p.disconnect()
 
 
 if __name__ == "__main__":
-    env = SlideToGoalEnv(gui=True)
+    env = CubeEnvironment(gui=True)
     env.reset()
-    env.apply_push([60, 60, 0])
+    env.apply_action(np.array([60, 60, 0]))
+    env.render_views(
+        topdown_path="data/test/topdown.png",
+        side_path="data/test/side.png",
+    )
     env.close()

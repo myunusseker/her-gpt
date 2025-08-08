@@ -10,4 +10,4 @@ You will be given:
 
 Choose the most appropriate error category that best describes the difference between the current state and the goal.
 
-Respond with only one of the given categories, following with a reasoning for it.
+Respond with only one of the given categories.

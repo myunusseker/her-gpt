@@ -34,9 +34,9 @@ if __name__ == "__main__":
         task_description="The task is to place a cube on the circular target position.",
         use_history=True
     )
+
     observation_id = error_gpt.upload_image("data/test/cube_data/side_views/side_view_330.png")
     goal_id = error_gpt.upload_image("data/test/cube_data/cube_goal.png")
-
     error_categories = [
         "cube is too far",
         "cube is to the left of the target",
