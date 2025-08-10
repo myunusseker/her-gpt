@@ -8,9 +8,10 @@ from PIL import Image
 class CubeEnvironment:
     """Simple environment where a cube is pushed towards a goal."""
 
-    def __init__(self, gui: bool = True, speed: int = 60):
+    def __init__(self, gui: bool = True, speed: int = 60, goal_position: list = [0.5, 0.5, 0]):
         self.speed = speed
         self.gui = gui
+        self.goal_position = np.array(goal_position)
         if self.gui:
             self.client = p.connect(p.GUI)
         else:
@@ -20,19 +21,18 @@ class CubeEnvironment:
 
         self.plane_id = p.loadURDF("plane.urdf")
         self.block_id = None
-        self.goal_position = np.array([0.5, 0.5, 0])
 
         self.last_camera_target = None
         self.last_camera_distance = 0.7 #0.7
         self.last_camera_yaw = -45
         self.last_camera_pitch = -45
 
-    def reset(self) -> np.ndarray:
+    def reset(self, start_pos = [0, 0, 0.02]) -> np.ndarray:
         p.resetSimulation()
         p.setGravity(0, 0, -9.8)
         self.plane_id = p.loadURDF("plane.urdf")
 
-        start_pos = [0, 0, 0.02]
+        start_pos = start_pos
         start_orientation = p.getQuaternionFromEuler([0, 0, 0])
         self.block_id = p.loadURDF("cube_small.urdf", start_pos, start_orientation)
         p.changeVisualShape(self.block_id, -1, rgbaColor=[0, 0, 1, 1])
@@ -162,11 +162,20 @@ class CubeEnvironment:
 
 
 if __name__ == "__main__":
-    env = CubeEnvironment(gui=True)
-    env.reset()
-    env.apply_action(np.array([60, 60, 0]))
+    env = CubeEnvironment(gui=True, goal_position=[0.3, 0.65, 0])
+    env.reset(start_pos=[0.3, 0.65, 0.02])
+    #env.apply_action(np.array([60, 60, 0]))
     env.render_views(
         topdown_path="data/test/topdown.png",
         side_path="data/test/side.png",
+        use_static_side=True
+    )
+    exit(0)
+    env.reset(start_pos=[0.3, 0.2, 0.02])
+    #env.apply_action(np.array([60, 60, 0]))
+    env.render_views(
+        topdown_path="data/test/topdown2.png",
+        side_path="data/test/side2.png",
+        use_static_side=True
     )
     env.close()

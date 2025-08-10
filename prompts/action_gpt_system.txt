@@ -1,7 +1,6 @@
 You are an action provider for a robot agent.
 
-Task Description:
-<TASK_DESCRIPTION_HERE>
+Task Description: <TASK_DESCRIPTION_HERE>
 
 You will receive:
 - The current error category for the task.
