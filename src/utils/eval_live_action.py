@@ -64,47 +64,6 @@ def call_model(messages, model):
     return resp.choices[0].message.content.strip()
 
 
-def run_trial(env: CubeEnvironment):
-    # Sample observation & goal positions
-    obs_xy = [round(random.uniform(0.0, 0.8), 2), round(random.uniform(0.0, 0.8), 2)]
-    env.reset(start_pos=[obs_xy[0], obs_xy[1], 0.02])
-    tmp_top_obs = "_obs_top.png"; tmp_side_obs = "_obs_side.png"
-    side_obs_path = grab_side_image(env, tmp_top_obs, tmp_side_obs)
-
-    goal_xy = [round(random.uniform(0.0, 0.8), 2), round(random.uniform(0.0, 0.8), 2)]
-    env.reset(start_pos=[goal_xy[0], goal_xy[1], 0.02])
-    tmp_top_goal = "_goal_top.png"; tmp_side_goal = "_goal_side.png"
-    side_goal_path = grab_side_image(env, tmp_top_goal, tmp_side_goal)
-
-    obs_b64 = encode_image(side_obs_path)
-    goal_b64 = encode_image(side_goal_path)
-
-    # cleanup side images
-    for pth in (side_obs_path, side_goal_path):
-        try: os.remove(pth)
-        except OSError: pass
-
-    true_dx = round(goal_xy[0] - obs_xy[0], 2)
-    true_dy = round(goal_xy[1] - obs_xy[1], 2)
-
-    messages = build_messages(obs_b64, goal_b64)
-    model_answer = call_model(messages, model="ft:gpt-4o-2024-08-06:personal:cube-env:C2lSpZJd")
-    pred_dx, pred_dy = parse_action(model_answer)
-
-    err_dx = pred_dx - true_dx
-    err_dy = pred_dy - true_dy
-    l2 = math.sqrt(err_dx**2 + err_dy**2)
-
-    return {
-        "obs": obs_xy,
-        "goal": goal_xy,
-        "true": [true_dx, true_dy],
-        "pred_raw": model_answer,
-        "pred": [pred_dx, pred_dy],
-        "error": [err_dx, err_dy],
-        "l2": l2,
-    }
-
 def run_env(env):
     goal_path = "data/cube_goal_left.png"
     position = [0.0, 0.0]
@@ -124,21 +83,6 @@ def run_env(env):
         position[1] += pred_dy
         print(f"predicted action: dx={pred_dx}, dy={pred_dy}")
     env.close()
-
-def main():
-    env = CubeEnvironment(gui=True,)
-    results = []
-    trials = 1
-    for i in range(trials):
-        r = run_trial(env)
-        results.append(r)
-        print(f"Trial {i+1}/{trials} obs={r['obs']} goal={r['goal']} true={r['true']} pred={r['pred']} l2={r['l2']:.3f}")
-    env.close()
-
-    avg_l2 = sum(r['l2'] for r in results) / len(results)
-    print(f"Average L2 error over {len(results)} trials: {avg_l2:.4f}")
-
-    return 0
 
 def main_run_env():
     env = CubeEnvironment(gui=True, goal_position=[0.3, 0.65, 0])
