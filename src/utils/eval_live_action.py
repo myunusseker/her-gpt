@@ -6,7 +6,7 @@ from openai import OpenAI
 
 from src.environments.cube_environment import CubeEnvironment
 
-client = OpenAI(api_key=apikey)
+client = OpenAI(api_key="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")
 
 system_prompt = (
     "You are a robotic agent that produces actions to move a cube based on observation and goal images.\n"
@@ -65,7 +65,7 @@ def call_model(messages, model):
 
 
 def run_env(env):
-    goal_path = "data/cube_goal_left.png"
+    goal_path = "data/cube_goal.png"
     position = [0.0, 0.0]
     for i in range(10):
         env.reset(start_pos=[position[0], position[1], 0.02])
@@ -85,7 +85,7 @@ def run_env(env):
     env.close()
 
 def main_run_env():
-    env = CubeEnvironment(gui=True, goal_position=[0.3, 0.65, 0])
+    env = CubeEnvironment(gui=True)
     run_env(env)
 
 if __name__ == '__main__':

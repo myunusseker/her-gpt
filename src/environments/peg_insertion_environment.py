@@ -6,15 +6,6 @@ import numpy as np
 
 class PegInsertionEnvironment:
     def __init__(self, gui=True, hz=60, initial_position=[0.40, 0.00], force_consistent_rendering=True):
-        """Initialize the peg insertion environment with robot and peg setup.
-        
-        Args:
-            gui: Whether to show GUI window
-            hz: Physics simulation frequency
-            initial_position: Initial robot position
-            force_consistent_rendering: If True, use software renderer for pixel-perfect consistency.
-                                       If False, use high-quality OpenGL (may have minor differences between GUI/DIRECT)
-        """
         self.hz = hz
         self.gui = gui
         self.initial_position = initial_position
@@ -23,43 +14,10 @@ class PegInsertionEnvironment:
         # Connect to simulation with rendering setup based on user preference
         if gui:
             self.physics_client = p.connect(p.GUI)
-            self.has_display = True
         else:
             self.physics_client = p.connect(p.DIRECT)
-            self.has_display = False
-            
-            # Try advanced methods to enable high-quality headless rendering
-            if not force_consistent_rendering:
-                egl_success = False
-                
-                # Method 1: Try EGL plugin
-                try:
-                    egl_plugin = p.loadPlugin('eglRendererPlugin')
-                    if egl_plugin >= 0:
-                        print('✓ EGL renderer plugin loaded - high-quality headless OpenGL available')
-                        egl_success = True
-                    else:
-                        print('✗ EGL plugin failed to load')
-                except Exception as e:
-                    print(f'✗ EGL plugin error: {e}')
-                
-                # Method 2: Try setting OpenGL context manually
-                if not egl_success:
-                    try:
-                        # Some PyBullet versions support this
-                        if hasattr(p, 'configureDebugVisualizer'):
-                            p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
-                        print('✓ Fallback OpenGL context configured')
-                    except:
-                        print('✗ Fallback OpenGL configuration failed')
-                
-                if not egl_success:
-                    print('ℹ  Using default DIRECT mode OpenGL (may have minor rendering differences)')
-            else:
-                print('ℹ  Consistent rendering mode enabled - will use software renderer')
         
         # Store connection info for debugging
-        self.connection_info = p.getConnectionInfo(self.physics_client)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         p.setGravity(0, 0, -9.81)
 
@@ -334,14 +292,6 @@ class PegInsertionEnvironment:
         # Ensure simulation is synchronized and OpenGL state is consistent
         p.stepSimulation()
         
-        # Force OpenGL state synchronization (helps with consistency between GUI/DIRECT)
-        if hasattr(p, 'submitProfileTiming'):
-            p.submitProfileTiming("render_sync")
-        
-        # Debug: Print rendering mode
-        if hasattr(self, 'connection_info'):
-            print(f"Rendering with connection method: {self.connection_info['connectionMethod']}")
-        
         # Get current end effector state for wrist camera
         eef_state = p.getLinkState(self.franka_id, self.eef_index)
         eef_pos = np.array(eef_state[4])
@@ -409,9 +359,10 @@ class PegInsertionEnvironment:
         )
         
         # Extract RGB data like cube environment (keep RGBA format)
-        wrist_rgb = np.array(wrist_img[2]).reshape(height, width, 4)[:,:,:3]
-        side_rgb = np.array(side_img[2]).reshape(height, width, 4)[:,:,:3]
-
+        wrist_rgb = np.array(wrist_img[2], dtype=np.uint8).reshape(height, width, 4)[:,:,:3]
+        side_rgb = np.array(side_img[2], dtype=np.uint8).reshape(height, width, 4)[:,:,:3]
+        print("Wrist RGB shape:", wrist_rgb.shape)
+        print(wrist_rgb[0,0])
         # Save images directly like cube environment (no post-processing)
         if save_images:
             # Ensure directories exist
