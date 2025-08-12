@@ -5,7 +5,7 @@ from openai import OpenAI
 from src.environments.peg_insertion_environment import PegInsertionEnvironment
 
 load_dotenv()
-client = OpenAI(api_key="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")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 system_prompt = (
     "You are a robotic agent that produces actions for a peg insertion task based on observation and goal images.\n"
